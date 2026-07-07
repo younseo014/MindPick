@@ -1,5 +1,5 @@
 {
-  "debugPortAddress": "127.0.0.1:53806",
+  "debugPortAddress": "127.0.0.1:60645",
   "defaultEntrypointService": "core:user:__vite_proxy_worker__",
   "userWorkerService": "core:user:site-creator-vinext-starter"
 }

@@ -3,7 +3,7 @@
 import type { FormEvent, ReactNode } from "react";
 import { useMemo, useState } from "react";
 
-type View = "home" | "games" | "report" | "watch";
+type View = "home" | "games" | "report" | "watch" | "precision";
 type GameId = "matching" | "reverse" | "word";
 type Area = "기억력" | "작업 기억" | "언어감각" | "집중력" | "공간지각";
 
@@ -110,8 +110,14 @@ export default function Home() {
   const [watchOn, setWatchOn] = useState(true);
   const [leisureNow, setLeisureNow] = useState(true);
   const [dailyAlerts, setDailyAlerts] = useState(2);
-  const [workStart, setWorkStart] = useState("09:00");
-  const [workEnd, setWorkEnd] = useState("18:00");
+  const [workStart, setWorkStart] = useState("10:30");
+  const [workEnd, setWorkEnd] = useState("15:00");
+  const [quickLullMode, setQuickLullMode] = useState(true);
+  const [storeSignalOn, setStoreSignalOn] = useState(true);
+  const [snoozed, setSnoozed] = useState(false);
+  const [privateRanking, setPrivateRanking] = useState(true);
+  const [splitTest, setSplitTest] = useState(true);
+  const [reminderSlot, setReminderSlot] = useState("내일 15:30");
 
   const level = Math.min(20, Math.floor(points / 180) + 1);
   const levelProgress = points % 180;
@@ -136,6 +142,7 @@ export default function Home() {
   const needsPrecisionCheck =
     records.filter((record) => record.score < 76).length >= 2 ||
     weeklyAverage < 80;
+  const notificationReady = watchOn && leisureNow && !snoozed;
 
   function completeGame(gameId: GameId, score: number, accuracy: number) {
     const game = games.find((item) => item.id === gameId)!;
@@ -176,7 +183,7 @@ export default function Home() {
             </div>
           </div>
 
-          <nav className="mt-5 grid grid-cols-4 gap-2 lg:grid-cols-1">
+          <nav className="mt-5 grid grid-cols-5 gap-2 lg:grid-cols-1">
             <NavButton active={view === "home"} label="홈" onClick={() => setView("home")} />
             <NavButton
               active={view === "games"}
@@ -192,6 +199,11 @@ export default function Home() {
               active={view === "watch"}
               label="워치"
               onClick={() => setView("watch")}
+            />
+            <NavButton
+              active={view === "precision"}
+              label="정밀"
+              onClick={() => setView("precision")}
             />
           </nav>
 
@@ -231,16 +243,23 @@ export default function Home() {
             <HomeView
               analysisOn={analysisOn}
               dailyAlerts={dailyAlerts}
-              leisureNow={leisureNow}
               needsPrecisionCheck={needsPrecisionCheck}
+              notificationReady={notificationReady}
               onboardingStep={onboardingStep}
+              privateRanking={privateRanking}
+              quickLullMode={quickLullMode}
               setActiveGame={setActiveGame}
               setAnalysisOn={setAnalysisOn}
               setOnboardingStep={setOnboardingStep}
+              setPrivateRanking={setPrivateRanking}
               setView={setView}
+              setWorkEnd={setWorkEnd}
+              setWorkStart={setWorkStart}
               strongestArea={strongestArea}
-              watchOn={watchOn}
+              storeSignalOn={storeSignalOn}
               weeklyAverage={weeklyAverage}
+              workEnd={workEnd}
+              workStart={workStart}
             />
           )}
 
@@ -259,6 +278,7 @@ export default function Home() {
               records={records}
               setAnalysisOn={setAnalysisOn}
               setView={setView}
+              splitTest={splitTest}
               strongestArea={strongestArea}
               weeklyAverage={weeklyAverage}
             />
@@ -268,14 +288,30 @@ export default function Home() {
             <WatchView
               dailyAlerts={dailyAlerts}
               leisureNow={leisureNow}
+              quickLullMode={quickLullMode}
               setDailyAlerts={setDailyAlerts}
               setLeisureNow={setLeisureNow}
+              setQuickLullMode={setQuickLullMode}
+              setSnoozed={setSnoozed}
+              setStoreSignalOn={setStoreSignalOn}
               setWatchOn={setWatchOn}
               setWorkEnd={setWorkEnd}
               setWorkStart={setWorkStart}
+              snoozed={snoozed}
+              storeSignalOn={storeSignalOn}
               watchOn={watchOn}
               workEnd={workEnd}
               workStart={workStart}
+            />
+          )}
+
+          {view === "precision" && (
+            <PrecisionView
+              reminderSlot={reminderSlot}
+              setReminderSlot={setReminderSlot}
+              setSplitTest={setSplitTest}
+              setView={setView}
+              splitTest={splitTest}
             />
           )}
         </div>
@@ -287,29 +323,43 @@ export default function Home() {
 function HomeView({
   analysisOn,
   dailyAlerts,
-  leisureNow,
   needsPrecisionCheck,
+  notificationReady,
   onboardingStep,
+  privateRanking,
+  quickLullMode,
   setActiveGame,
   setAnalysisOn,
   setOnboardingStep,
+  setPrivateRanking,
   setView,
+  setWorkEnd,
+  setWorkStart,
   strongestArea,
-  watchOn,
+  storeSignalOn,
   weeklyAverage,
+  workEnd,
+  workStart,
 }: {
   analysisOn: boolean;
   dailyAlerts: number;
-  leisureNow: boolean;
   needsPrecisionCheck: boolean;
+  notificationReady: boolean;
   onboardingStep: number;
+  privateRanking: boolean;
+  quickLullMode: boolean;
   setActiveGame: (game: GameId) => void;
   setAnalysisOn: (value: boolean) => void;
   setOnboardingStep: (step: number) => void;
+  setPrivateRanking: (value: boolean) => void;
   setView: (view: View) => void;
+  setWorkEnd: (value: string) => void;
+  setWorkStart: (value: string) => void;
   strongestArea: Area;
-  watchOn: boolean;
+  storeSignalOn: boolean;
   weeklyAverage: number;
+  workEnd: string;
+  workStart: string;
 }) {
   return (
     <div className="space-y-5 px-5 py-5">
@@ -318,9 +368,9 @@ function HomeView({
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="flex flex-wrap gap-2">
-                {watchOn && leisureNow && (
+                {notificationReady && (
                   <span className="rounded-lg bg-[#d7f0df] px-3 py-1 text-sm font-bold text-[#1d5c39]">
-                    지금 딱 좋은 타이밍
+                    {quickLullMode ? "짧은 소강 포착" : "지금 딱 좋은 타이밍"}
                   </span>
                 )}
                 <span className="rounded-lg bg-[#ffe4d8] px-3 py-1 text-sm font-bold text-[#9a3e28]">
@@ -353,8 +403,11 @@ function HomeView({
             <Metric label="알림" value={String(dailyAlerts)} unit="회" />
           </div>
           <p className="mt-4 text-sm leading-6 text-[#625d52]">
-            안정 심박, 비활동, 업무 시간 제외 조건이 맞아 추천 배지가 켜진
-            상태입니다.
+            {notificationReady
+              ? storeSignalOn
+                ? "매장 신호와 비활동 상태를 함께 보고 조용한 타이밍만 고릅니다."
+                : "비활동 상태는 맞지만 위치 신호 없이 더 조심스럽게 판단합니다."
+              : "지금은 알림을 쉬고 있어 추천 배지가 꺼져 있습니다."}
           </p>
         </div>
       </section>
@@ -374,11 +427,11 @@ function HomeView({
         />
         <DashboardTile
           label="정밀 모드"
-          value={needsPrecisionCheck ? "권유 가능" : "대기"}
+          value={needsPrecisionCheck ? "체크인 필요" : "대기"}
           detail={
             needsPrecisionCheck
-              ? "성적표에서 테스트 진입을 열 수 있어요."
-              : "꾸준히 플레이하면 더 정확해집니다."
+              ? "바로 테스트보다 먼저 오늘 컨디션을 확인합니다."
+              : "평소 게임은 그대로 즐기면 됩니다."
           }
           tone="yellow"
         />
@@ -410,6 +463,23 @@ function HomeView({
           <p className="text-base leading-7 text-[#3d3a32]">
             {onboardingCopy(onboardingStep)}
           </p>
+          {onboardingStep === 1 && (
+            <div className="mt-4 grid gap-3 rounded-lg bg-white p-4 md:grid-cols-[1fr_auto_auto] md:items-center">
+              <p className="text-sm font-black">내 업무 시간</p>
+              <input
+                className="h-10 rounded-lg border border-[#d8d1bf] bg-white px-3 text-sm font-bold"
+                onChange={(event) => setWorkStart(event.target.value)}
+                type="time"
+                value={workStart}
+              />
+              <input
+                className="h-10 rounded-lg border border-[#d8d1bf] bg-white px-3 text-sm font-bold"
+                onChange={(event) => setWorkEnd(event.target.value)}
+                type="time"
+                value={workEnd}
+              />
+            </div>
+          )}
           {onboardingStep === 2 && (
             <button
               className="mt-4 h-11 rounded-lg bg-[#e56f4f] px-4 text-sm font-black text-white"
@@ -418,6 +488,36 @@ function HomeView({
               {analysisOn ? "분석 켜짐" : "성적 분석 켜기"}
             </button>
           )}
+        </div>
+      </section>
+
+      <section className="grid gap-5 lg:grid-cols-2">
+        <div className="rounded-lg border border-[#d8d1bf] bg-[#fffdf8] p-5">
+          <p className="text-sm font-bold text-[#5e7d68]">보상 지갑</p>
+          <h3 className="mt-2 text-2xl font-black">이번 달 4,200P 전환 가능</h3>
+          <div className="mt-4 h-2 rounded-full bg-[#e9e1d0]">
+            <div className="h-2 rounded-full bg-[#5e7d68]" style={{ width: "84%" }} />
+          </div>
+          <p className="mt-3 text-sm leading-6 text-[#625d52]">
+            월 전환 한도 이후 포인트는 다음 달로 이월하거나 쿠폰으로 바꿀 수
+            있습니다.
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-[#d8d1bf] bg-[#fffdf8] p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold text-[#5e7d68]">비교 설정</p>
+              <h3 className="mt-2 text-2xl font-black">
+                {privateRanking ? "내 기록만 보기" : "익명 평균과 비교"}
+              </h3>
+            </div>
+            <Toggle checked={privateRanking} onChange={setPrivateRanking} />
+          </div>
+          <p className="mt-3 text-sm leading-6 text-[#625d52]">
+            공개 비교 대신 비공개 기록을 기본값으로 두고, 원할 때만 익명 평균을
+            참고합니다.
+          </p>
         </div>
       </section>
     </div>
@@ -704,6 +804,7 @@ function ReportView({
   records,
   setAnalysisOn,
   setView,
+  splitTest,
   strongestArea,
   weeklyAverage,
 }: {
@@ -712,6 +813,7 @@ function ReportView({
   records: PlayRecord[];
   setAnalysisOn: (value: boolean) => void;
   setView: (view: View) => void;
+  splitTest: boolean;
   strongestArea: Area;
   weeklyAverage: number;
 }) {
@@ -721,7 +823,7 @@ function ReportView({
         <div className="rounded-lg border border-[#d8d1bf] bg-[#fffdf8] p-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm font-bold text-[#5e7d68]">주간 성적 변화</p>
+              <p className="text-sm font-bold text-[#5e7d68]">이번 주 게임 리듬</p>
               <h3 className="mt-1 text-2xl font-black">평균 {weeklyAverage}점</h3>
             </div>
             <p className="text-sm font-bold text-[#625d52]">
@@ -745,10 +847,11 @@ function ReportView({
 
         <div className="space-y-5">
           <div className="rounded-lg border border-[#d8d1bf] bg-[#fffbec] p-5">
-            <p className="text-sm font-bold text-[#766a43]">수면-성적 인사이트</p>
-            <p className="mt-3 text-3xl font-black">+12%</p>
+            <p className="text-sm font-bold text-[#766a43]">오늘의 쉬어가기</p>
+            <p className="mt-3 text-3xl font-black">짧게 한 판</p>
             <p className="mt-2 text-sm leading-6 text-[#625d52]">
-              수면이 7시간 이상인 날 게임 성적이 더 높게 나타났습니다.
+              바쁜 날에는 긴 목표보다 1분짜리 단어 사냥으로 가볍게 이어가면
+              충분합니다.
             </p>
           </div>
           <div className="rounded-lg border border-[#d8d1bf] bg-[#fffdf8] p-5">
@@ -768,7 +871,7 @@ function ReportView({
 
       <section className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-lg border border-[#d8d1bf] bg-[#fffdf8] p-5">
-          <p className="text-sm font-bold text-[#5e7d68]">인지 영역별 기록</p>
+          <p className="text-sm font-bold text-[#5e7d68]">강점 중심 기록</p>
           <div className="mt-4 space-y-3">
             {records.slice(-5).map((record, index) => (
               <div className="grid grid-cols-[92px_1fr_52px] items-center gap-3" key={`${record.game}-${index}`}>
@@ -786,14 +889,24 @@ function ReportView({
         </div>
 
         <div className="rounded-lg border border-[#d8d1bf] bg-[#fff3ec] p-5">
-          <p className="text-sm font-bold text-[#9a3e28]">두뇌 정밀 진단 모드</p>
+          <p className="text-sm font-bold text-[#9a3e28]">요즘 컨디션 어때요?</p>
           <h3 className="mt-2 text-2xl font-black">
-            {needsPrecisionCheck ? "진입 가능" : "아직 잠겨 있음"}
+            {needsPrecisionCheck ? "먼저 컨디션 체크" : "가볍게 유지 중"}
           </h3>
           <p className="mt-3 text-sm leading-6 text-[#625d52]">
-            게임 성적 패턴 조건이 충족되면 표준 인지 테스트 화면으로 자연스럽게
-            이어집니다. 데모에서는 조건 충족 상태를 리포트 점수로 판단합니다.
+            평소보다 덜 풀리는 날에는 바로 테스트로 넘기지 않고 피로, 바쁨,
+            수면 같은 오늘 상태를 먼저 확인합니다.
           </p>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {["괜찮아요", "조금 피곤", "바빴어요"].map((label) => (
+              <button
+                className="h-10 rounded-lg border border-[#d8d1bf] bg-white text-xs font-black text-[#3d3a32]"
+                key={label}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <button
             className={`mt-5 h-12 rounded-lg px-5 text-sm font-black ${
               needsPrecisionCheck
@@ -801,9 +914,9 @@ function ReportView({
                 : "bg-[#d8d1bf] text-[#736b5d]"
             }`}
             disabled={!needsPrecisionCheck}
-            onClick={() => setView("home")}
+            onClick={() => setView("precision")}
           >
-            정밀 테스트 보기
+            {splitTest ? "나눠서 정밀 모드 보기" : "정밀 모드 보기"}
           </button>
         </div>
       </section>
@@ -814,22 +927,34 @@ function ReportView({
 function WatchView({
   dailyAlerts,
   leisureNow,
+  quickLullMode,
   setDailyAlerts,
   setLeisureNow,
+  setQuickLullMode,
+  setSnoozed,
+  setStoreSignalOn,
   setWatchOn,
   setWorkEnd,
   setWorkStart,
+  snoozed,
+  storeSignalOn,
   watchOn,
   workEnd,
   workStart,
 }: {
   dailyAlerts: number;
   leisureNow: boolean;
+  quickLullMode: boolean;
   setDailyAlerts: (value: number) => void;
   setLeisureNow: (value: boolean) => void;
+  setQuickLullMode: (value: boolean) => void;
+  setSnoozed: (value: boolean) => void;
+  setStoreSignalOn: (value: boolean) => void;
   setWatchOn: (value: boolean) => void;
   setWorkEnd: (value: string) => void;
   setWorkStart: (value: string) => void;
+  snoozed: boolean;
+  storeSignalOn: boolean;
   watchOn: boolean;
   workEnd: string;
   workStart: string;
@@ -848,6 +973,14 @@ function WatchView({
           </SettingRow>
           <SettingRow label="현재 여가 상태">
             <Toggle checked={leisureNow} onChange={setLeisureNow} />
+          </SettingRow>
+          <SettingRow label="짧은 소강상태">
+            <Toggle checked={quickLullMode} onChange={setQuickLullMode} />
+            <span className="text-sm font-bold text-[#625d52]">5~10분 비활동도 포착</span>
+          </SettingRow>
+          <SettingRow label="매장 신호 참고">
+            <Toggle checked={storeSignalOn} onChange={setStoreSignalOn} />
+            <span className="text-sm font-bold text-[#625d52]">Wi-Fi 위치로 오탐 줄이기</span>
           </SettingRow>
           <SettingRow label="하루 최대 알림">
             <input
@@ -876,6 +1009,18 @@ function WatchView({
             />
             <span className="text-sm font-bold text-[#625d52]">까지</span>
           </SettingRow>
+          <SettingRow label="알림 상태">
+            <button
+              className={`h-10 rounded-lg px-4 text-sm font-black ${
+                snoozed
+                  ? "bg-[#d7f0df] text-[#1d5c39]"
+                  : "bg-[#e56f4f] text-white"
+              }`}
+              onClick={() => setSnoozed(!snoozed)}
+            >
+              {snoozed ? "스누즈 해제" : "지금 바쁨"}
+            </button>
+          </SettingRow>
         </div>
       </section>
 
@@ -883,13 +1028,116 @@ function WatchView({
         <p className="text-sm font-bold text-[#cde5d5]">워치 미리보기</p>
         <div className="mx-auto mt-6 flex aspect-square max-w-64 flex-col items-center justify-center rounded-full border-8 border-[#1b2f24] bg-[#111b16] p-8 text-center shadow-xl">
           <p className="text-xs font-bold text-[#9db29d]">MindPick</p>
-          <h3 className="mt-3 text-xl font-black">오늘의 두뇌 게임</h3>
+          <h3 className="mt-3 text-xl font-black">
+            {snoozed ? "알림 쉬는 중" : "오늘의 두뇌 게임"}
+          </h3>
           <p className="mt-3 text-sm leading-6 text-[#dcebe0]">
-            지금 한 판 하기 좋은 상태입니다.
+            {snoozed
+              ? "손님 응대 중에는 조용히 기다립니다."
+              : "지금 한 판 하기 좋은 상태입니다."}
           </p>
-          <button className="mt-5 h-10 rounded-lg bg-[#e56f4f] px-4 text-xs font-black text-white">
-            짝 찾기
-          </button>
+          <div className="mt-5 grid w-full gap-2">
+            <button className="h-10 rounded-lg bg-[#e56f4f] px-4 text-xs font-black text-white">
+              짝 찾기
+            </button>
+            <button
+              className="h-10 rounded-lg bg-white/10 px-4 text-xs font-black text-white ring-1 ring-white/20"
+              onClick={() => setSnoozed(true)}
+            >
+              지금 바쁨
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function PrecisionView({
+  reminderSlot,
+  setReminderSlot,
+  setSplitTest,
+  setView,
+  splitTest,
+}: {
+  reminderSlot: string;
+  setReminderSlot: (value: string) => void;
+  setSplitTest: (value: boolean) => void;
+  setView: (view: View) => void;
+  splitTest: boolean;
+}) {
+  return (
+    <div className="space-y-5 px-5 py-5">
+      <section className="rounded-lg border border-[#b9c3bd] bg-[#f8fbf9] p-5">
+        <p className="text-sm font-bold text-[#486052]">정밀 모드</p>
+        <h3 className="mt-2 text-3xl font-black">평소 게임과 분리해서 진행</h3>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-[#5b655d]">
+          이 화면에서만 전문 점검 안내를 보여주고, 게임 센터의 난이도와 보상
+          흐름은 그대로 둡니다.
+        </p>
+      </section>
+
+      <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
+        <div className="rounded-lg border border-[#d8d1bf] bg-[#fffdf8] p-5">
+          <p className="text-sm font-bold text-[#5e7d68]">진행 방식</p>
+          <div className="mt-5 space-y-4">
+            <SettingRow label="세션 나눠서 진행">
+              <Toggle checked={splitTest} onChange={setSplitTest} />
+              <span className="text-sm font-bold text-[#625d52]">
+                3분 + 3분 + 2분
+              </span>
+            </SettingRow>
+            <SettingRow label="리마인드 예약">
+              <select
+                className="h-10 rounded-lg border border-[#d8d1bf] bg-white px-3 text-sm font-bold"
+                onChange={(event) => setReminderSlot(event.target.value)}
+                value={reminderSlot}
+              >
+                <option>내일 15:30</option>
+                <option>오늘 20:00</option>
+                <option>주말 오전</option>
+              </select>
+            </SettingRow>
+          </div>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            {[
+              ["1", "기억 단어", "약 3분"],
+              ["2", "시계 그리기", "약 3분"],
+              ["3", "다시 떠올리기", "약 2분"],
+            ].map(([step, title, time]) => (
+              <article
+                className="rounded-lg border border-[#d8d1bf] bg-white p-4"
+                key={step}
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#243b2f] text-sm font-black text-white">
+                  {step}
+                </span>
+                <h4 className="mt-3 text-base font-black">{title}</h4>
+                <p className="mt-1 text-sm font-bold text-[#625d52]">{time}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-[#d8d1bf] bg-[#fff3ec] p-5">
+          <p className="text-sm font-bold text-[#9a3e28]">예약됨</p>
+          <h3 className="mt-2 text-2xl font-black">{reminderSlot}</h3>
+          <p className="mt-3 text-sm leading-6 text-[#625d52]">
+            짧고 불규칙한 여유 시간에는 바로 시작하지 않고, 한가한 시간으로
+            미룰 수 있습니다.
+          </p>
+          <div className="mt-5 grid gap-2">
+            <button className="h-12 rounded-lg bg-[#243b2f] px-5 text-sm font-black text-white">
+              첫 세션 시작
+            </button>
+            <button
+              className="h-12 rounded-lg border border-[#d8d1bf] bg-white px-5 text-sm font-black text-[#3d3a32]"
+              onClick={() => setView("games")}
+            >
+              평소 게임으로 돌아가기
+            </button>
+          </div>
         </div>
       </section>
     </div>
@@ -1049,7 +1297,8 @@ function viewTitle(view: View) {
   const titles: Record<View, string> = {
     games: "게임 센터",
     home: "오늘의 두뇌 트레이닝",
-    report: "두뇌 건강 리포트",
+    precision: "두뇌 정밀 모드",
+    report: "게임 실력 리포트",
     watch: "워치 연동 설정",
   };
 
@@ -1064,12 +1313,12 @@ function onboardingTitle(step: number) {
 
 function onboardingCopy(step: number) {
   if (step === 1) {
-    return "앱 설치 직후에는 부담 없는 두뇌 트레이닝 게임으로 시작합니다. 워치 연동과 선호 게임만 고르면 홈 추천이 열립니다.";
+    return "처음에는 플레이 시간과 알림 시간대를 꼭 맞춥니다. 자영업자처럼 하루 흐름이 일정하지 않아도 오후 소강 시간을 놓치지 않도록 업무 시간을 직접 고릅니다.";
   }
 
   if (step === 2) {
-    return "7일 사용 후에는 게임 성적을 분석해 두뇌 건강 변화도 함께 추적할 수 있음을 알리고, 사용자가 동의할 때만 분석을 켭니다.";
+    return "7일 뒤에는 게임 실력 변화를 더 자세히 보여드릴지 묻습니다. 어려운 표현보다 내가 어떤 게임에 강한지, 어떤 날 잘 풀리는지를 중심으로 보여줍니다.";
   }
 
-  return "정밀 테스트 권유 시점에는 인지 기능 점검을 위한 전문 도구라는 점을 명확히 고지합니다.";
+  return "정밀 테스트는 일반 게임과 분리된 화면에서만 안내합니다. 평소 게임 화면과 보상 흐름은 그대로 유지됩니다.";
 }

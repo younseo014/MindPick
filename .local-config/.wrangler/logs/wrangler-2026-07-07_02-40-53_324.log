@@ -1,0 +1,16 @@
+
+--- 2026-07-07T02:40:53.641Z debug
+🪵  Writing logs to "/Users/younseoyeon/Documents/MindPick-0706/.local-config/.wrangler/logs/wrangler-2026-07-07_02-40-53_324.log"
+---
+
+--- 2026-07-07T02:40:53.641Z debug
+local dev variables file not found at ".dev.vars". Continuing... For more details, refer to https://developers.cloudflare.com/workers/wrangler/system-environment-variables/
+---
+
+--- 2026-07-07T02:40:53.642Z debug
+.env file not found at "/Users/younseoyeon/Documents/MindPick-0706/.env". Continuing... For more details, refer to https://developers.cloudflare.com/workers/wrangler/system-environment-variables/
+---
+
+--- 2026-07-07T02:40:53.642Z debug
+.env file not found at "/Users/younseoyeon/Documents/MindPick-0706/.env.local". Continuing... For more details, refer to https://developers.cloudflare.com/workers/wrangler/system-environment-variables/
+---
